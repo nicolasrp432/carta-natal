@@ -413,6 +413,34 @@ export const adaptFreeAstrologyResponse = (apiData: any, userData: any): NatalCh
      };
   });
 
+  // 6. Calculadora Geométrica de Aspectos
+  const calculatedAspects: any[] = [];
+  for (let i = 0; i < mappedPlanets.length; i++) {
+    for (let j = i + 1; j < mappedPlanets.length; j++) {
+      const p1 = mappedPlanets[i];
+      const p2 = mappedPlanets[j];
+      
+      // Evitar calcular aspectos con nodos desconocidos
+      if (p1.name === 'Unknown' || p2.name === 'Unknown') continue;
+
+      const diff = Math.abs(p1.absoluteDegree - p2.absoluteDegree);
+      const shortestDistance = Math.min(diff, 360 - diff);
+
+      // Reglas Ptolemaicas (Orbes)
+      if (shortestDistance <= 8) {
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Conjunction', angle: 0, orb: shortestDistance });
+      } else if (Math.abs(shortestDistance - 60) <= 6) {
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Sextile', angle: 60, orb: Math.abs(shortestDistance - 60) });
+      } else if (Math.abs(shortestDistance - 90) <= 8) {
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Square', angle: 90, orb: Math.abs(shortestDistance - 90) });
+      } else if (Math.abs(shortestDistance - 120) <= 8) {
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Trine', angle: 120, orb: Math.abs(shortestDistance - 120) });
+      } else if (Math.abs(shortestDistance - 180) <= 8) {
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Opposition', angle: 180, orb: Math.abs(shortestDistance - 180) });
+      }
+    }
+  }
+
   return {
     subject: {
       name: userData.name,
@@ -424,7 +452,7 @@ export const adaptFreeAstrologyResponse = (apiData: any, userData: any): NatalCh
     // Quitamos ASC y MC de los planetas para que no se dupliquen en las tarjetas
     planets: mappedPlanets.filter((p:any) => p.name !== 'Ascendente' && p.name !== 'Medio Cielo'), 
     houses: mappedHouses,
-    aspects: [],
+    aspects: calculatedAspects,
     ascendant: ascendant as any,
     midheaven: midheaven as any,
     calculatedAt: new Date().toISOString()

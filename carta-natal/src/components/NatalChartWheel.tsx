@@ -17,9 +17,10 @@ function getPlanetSymbol(name: string): string {
 
 interface NatalChartWheelProps {
   data: NatalChartData
+  onPlanetClick?: (planet: any) => void
 }
 
-export default function NatalChartWheel({ data }: NatalChartWheelProps) {
+export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheelProps) {
   const cx = 400
   const cy = 400
 
@@ -182,7 +183,12 @@ export default function NatalChartWheel({ data }: NatalChartWheelProps) {
             const pos = getCoords(planet.absoluteDegree, rx)
             
             return (
-              <g key={`planet-${planet.name}`} className="group/planet transition-all hover:scale-110 cursor-pointer" style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}>
+              <g 
+                key={`planet-${planet.name}`} 
+                className="group/planet transition-transform hover:scale-125 cursor-pointer origin-center" 
+                style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
+                onClick={() => onPlanetClick?.(planet)}
+              >
                 {/* Visual marker line from inner ring */}
                 <line 
                   x1={getCoords(planet.absoluteDegree, rx + 18).x} 

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import type { NatalChartData, ZodiacSign } from '../types'
 import { getSignSymbol, getElementColors, getSignElement } from '../utils/zodiac'
 import NatalChartWheel from './NatalChartWheel'
+import InterpretationPanel from './InterpretationPanel'
 
 interface ChartResultsProps {
   data: NatalChartData
@@ -10,6 +12,7 @@ interface ChartResultsProps {
 
 export default function ChartResults({ data, onReset }: ChartResultsProps) {
   const { subject, planets, houses, ascendant, midheaven } = data
+  const [selectedPlanet, setSelectedPlanet] = useState<any | null>(null);
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-[fadeInUp_600ms_ease-out]">
@@ -33,7 +36,7 @@ export default function ChartResults({ data, onReset }: ChartResultsProps) {
 
       {/* ─── Natal Chart Visual Wheel ─── */}
       <section className="py-4 sm:py-8">
-        <NatalChartWheel data={data} />
+        <NatalChartWheel data={data} onPlanetClick={(planet) => setSelectedPlanet(planet)} />
       </section>
 
       {/* ─── Key Points: ASC + MC ─── */}
@@ -165,6 +168,13 @@ export default function ChartResults({ data, onReset }: ChartResultsProps) {
           Calcular otra carta
         </button>
       </div>
+
+      {selectedPlanet && (
+        <InterpretationPanel
+          planet={selectedPlanet}
+          onClose={() => setSelectedPlanet(null)}
+        />
+      )}
     </div>
   )
 }
