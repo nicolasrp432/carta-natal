@@ -1,7 +1,6 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { MapPin, ChevronDown } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { MapPin, ChevronDown, Loader2 } from 'lucide-react'
 import type { CityData } from '../types'
-import { searchCities } from '../data'
 
 interface CityAutocompleteProps {
   value: CityData | null
@@ -13,17 +12,14 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  
+  const [isLoading, setIsLoading] = useState(false)
+  const [results, setResults] = useState<CityData[]>([])
+  
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
-
-  // Derive search results from query — no useEffect needed
-  const results = useMemo<CityData[]>(() => {
-    if (query.length >= 2 && !value) {
-      return searchCities(query)
-    }
-    return []
-  }, [query, value])
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -54,6 +50,7 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
   const clearSelection = useCallback(() => {
     onChange(null)
     setQuery('')
+    setResults([])
     inputRef.current?.focus()
   }, [onChange])
 
@@ -85,16 +82,58 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     setQuery(newValue)
-    // Open dropdown when typing
-    if (newValue.length >= 2) {
-      setIsOpen(true)
-      setHighlightedIndex(-1)
-    } else {
-      setIsOpen(false)
-    }
+
     if (value) {
       onChange(null)
     }
+
+    if (newValue.length < 3) {
+      setResults([])
+      setIsOpen(false)
+      setIsLoading(false)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      return
+    }
+
+    setIsOpen(true)
+    setIsLoading(true)
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(newValue)}&format=json&addressdetails=1&limit=5`
+        const response = await fetch(url)
+        if (!response.ok) throw new Error('API fetch error')
+        
+        const data: any[] = await response.json()
+        
+        const fetchedCities: CityData[] = data.map((item) => {
+          const address = item.address || {}
+          const cityName = address.city || address.town || address.village || address.municipality || item.name || 'Ciudad'
+          const stateOrRegion = address.state || address.region || ''
+          const countryName = address.country || 'Desconocido'
+          
+          return {
+            name: `${cityName}${stateOrRegion && stateOrRegion !== cityName ? `, ${stateOrRegion}` : ''}`,
+            country: countryName,
+            latitude: parseFloat(item.lat),
+            longitude: parseFloat(item.lon),
+            timezone: 'Auto', // Fallback as OpenStreetMap does not provide TZ
+          }
+        })
+        
+        // Very basic deduplication by name + lat/lon combo if needed, though Nominatim usually filters reasonably well
+        const uniqueCities = Array.from(new Map(fetchedCities.map(c => [`${c.name}-${c.country}`, c])).values())
+        
+        setResults(uniqueCities)
+      } catch (error) {
+        console.error("Geocoding fetch failed:", error)
+        setResults([])
+      } finally {
+        setIsLoading(false)
+      }
+    }, 400)
   }
 
   return (
@@ -136,6 +175,7 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
             }
           `}
         />
+        
         {value ? (
           <button
             type="button"
@@ -150,14 +190,23 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
         ) : (
           <ChevronDown
             size={16}
-            className={`absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+            aria-hidden="true"
+          />
+        )}
+        
+        {/* Loading Spinner Indicator */}
+        {!value && isLoading && (
+          <Loader2 
+            size={16} 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gold-500 animate-spin pointer-events-none" 
             aria-hidden="true"
           />
         )}
       </div>
 
       {/* Dropdown */}
-      {isOpen && results.length > 0 && (
+      {isOpen && (
         <ul
           ref={listRef}
           id={`${id}-listbox`}
@@ -171,49 +220,59 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
             py-1
           "
         >
-          {results.map((city, index) => (
-            <li
-              key={`${city.name}-${city.country}`}
-              id={`${id}-option-${index}`}
-              role="option"
-              aria-selected={highlightedIndex === index}
-              onClick={() => selectCity(city)}
-              onMouseEnter={() => setHighlightedIndex(index)}
-              className={`
-                flex items-center gap-3 px-4 py-3 cursor-pointer
-                transition-colors duration-100
-                ${highlightedIndex === index
-                  ? 'bg-gold-50 text-stone-900'
-                  : 'text-stone-700 hover:bg-stone-50'
-                }
-              `}
-            >
-              <MapPin
-                size={14}
-                className={`shrink-0 ${highlightedIndex === index ? 'text-gold-500' : 'text-stone-400'}`}
-                aria-hidden="true"
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[15px] font-medium truncate">{city.name}</span>
-                <span className="text-[12px] text-stone-400">{city.country}</span>
-              </div>
-              <span className="ml-auto text-[11px] text-stone-300 font-mono tabular-nums shrink-0">
-                {city.latitude.toFixed(2)}°, {city.longitude.toFixed(2)}°
-              </span>
+          {isLoading && results.length === 0 ? (
+            <li className="px-4 py-3 text-sm text-stone-500 flex items-center gap-2">
+               <Loader2 size={14} className="animate-spin text-stone-400" />
+               Buscando ciudad...
             </li>
-          ))}
+          ) : results.length === 0 && !isLoading && query.length >= 3 ? (
+            <li className="px-4 py-3 text-sm text-stone-500">
+               No encontramos esa ciudad.
+            </li>
+          ) : (
+            results.map((city, index) => (
+              <li
+                key={`${city.name}-${city.country}-${index}`}
+                id={`${id}-option-${index}`}
+                role="option"
+                aria-selected={highlightedIndex === index}
+                onClick={() => selectCity(city)}
+                onMouseEnter={() => setHighlightedIndex(index)}
+                className={`
+                  flex items-center gap-3 px-4 py-3 cursor-pointer
+                  transition-colors duration-100
+                  ${highlightedIndex === index
+                    ? 'bg-gold-50 text-stone-900'
+                    : 'text-stone-700 hover:bg-stone-50'
+                  }
+                `}
+              >
+                <MapPin
+                  size={14}
+                  className={`shrink-0 ${highlightedIndex === index ? 'text-gold-500' : 'text-stone-400'}`}
+                  aria-hidden="true"
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[15px] font-medium truncate">{city.name}</span>
+                  <span className="text-[12px] text-stone-400 truncate">{city.country}</span>
+                </div>
+                <span className="ml-auto text-[11px] text-stone-300 font-mono tabular-nums shrink-0">
+                  {city.latitude.toFixed(2)}°, {city.longitude.toFixed(2)}°
+                </span>
+              </li>
+            ))
+          )}
         </ul>
       )}
 
       {/* Selected city info badge */}
       {value && (
-        <div className="mt-2 flex items-center gap-2 text-[12px] text-stone-500">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gold-50 text-gold-600 font-medium">
-            {value.timezone}
-          </span>
-          <span className="text-stone-300">·</span>
-          <span className="font-mono tabular-nums">
+        <div className="mt-2 flex items-center justify-between text-[12px] text-stone-500">
+          <span className="font-mono tabular-nums text-stone-400 tracking-wider">
             {value.latitude.toFixed(4)}°, {value.longitude.toFixed(4)}°
+          </span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200 text-stone-600 font-medium">
+            GPS Exacto
           </span>
         </div>
       )}

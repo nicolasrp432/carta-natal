@@ -1,6 +1,7 @@
 import { RotateCcw } from 'lucide-react'
 import type { NatalChartData, ZodiacSign } from '../types'
 import { getSignSymbol, getElementColors, getSignElement } from '../utils/zodiac'
+import NatalChartWheel from './NatalChartWheel'
 
 interface ChartResultsProps {
   data: NatalChartData
@@ -30,6 +31,11 @@ export default function ChartResults({ data, onReset }: ChartResultsProps) {
         </p>
       </header>
 
+      {/* ─── Natal Chart Visual Wheel ─── */}
+      <section className="py-4 sm:py-8">
+        <NatalChartWheel data={data} />
+      </section>
+
       {/* ─── Key Points: ASC + MC ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <AngleCard label="Ascendente" point={ascendant} />
@@ -44,7 +50,7 @@ export default function ChartResults({ data, onReset }: ChartResultsProps) {
             const elemColors = getElementColors(planet.sign)
             return (
               <div
-                key={planet.name}
+                key={`planet-${planet.name}`}
                 className="
                   group
                   bg-white/80 backdrop-blur-sm
@@ -108,9 +114,9 @@ export default function ChartResults({ data, onReset }: ChartResultsProps) {
       <section>
         <SectionTitle title="Cúspides de las Casas" subtitle="Sistema Placidus" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {houses.map((house) => (
+          {houses.map((house, index) => (
             <div
-              key={house.houseNumber}
+              key={`house-${index}`}
               className="
                 bg-white/80 backdrop-blur-sm
                 border border-stone-200/60 rounded-xl

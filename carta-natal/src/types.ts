@@ -69,6 +69,16 @@ export interface AnglePoint {
   absoluteDegree: number
 }
 
+export type AspectType = 'Conjunction' | 'Sextile' | 'Square' | 'Trine' | 'Opposition'
+
+export interface Aspect {
+  planet1: string
+  planet2: string
+  type: AspectType
+  angle: number
+  orb: number
+}
+
 export interface NatalChartData {
   /** Subject info echoed back */
   subject: {
@@ -82,6 +92,8 @@ export interface NatalChartData {
   planets: PlanetPosition[]
   /** House cusps (Placidus system) */
   houses: HouseCusp[]
+  /** Core astrological aspects between planets */
+  aspects: Aspect[]
   /** Ascendant (ASC) */
   ascendant: AnglePoint
   /** Midheaven (MC) */

@@ -10,4 +10,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api/astrology': {
+        target: 'https://json.freeastrologyapi.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/astrology/, '')
+      }
+    }
+  }
 })
