@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/astrology/:path*",
+            "destination": "https://json.freeastrologyapi.com/:path*"
+        }
+    ]
+}
