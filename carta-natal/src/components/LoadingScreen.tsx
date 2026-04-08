@@ -27,7 +27,7 @@ export default function LoadingScreen() {
           height="72"
           viewBox="0 0 72 72"
           fill="none"
-          className="animate-[spin_8s_linear_infinite] text-gold-400/60"
+          className="animate-[spin_8s_linear_infinite] text-amber-500/70"
         >
           <circle cx="36" cy="36" r="34" stroke="currentColor" strokeWidth="0.5" />
           <circle cx="36" cy="36" r="28" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 6" />
@@ -54,7 +54,7 @@ export default function LoadingScreen() {
           height="36"
           viewBox="0 0 36 36"
           fill="none"
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-[spin_6s_linear_infinite_reverse] text-gold-500"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-[spin_6s_linear_infinite_reverse] text-amber-500"
         >
           <path
             d="M18 4L18 32M4 18L32 18M8 8L28 28M28 8L8 28"
@@ -65,12 +65,12 @@ export default function LoadingScreen() {
         </svg>
 
         {/* Center pulse dot */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gold-500 animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
       </div>
 
       {/* Phase text */}
       <p
-        className="font-serif text-xl sm:text-2xl text-stone-700 text-center transition-opacity duration-300 min-h-[2em]"
+        className="font-serif text-xl sm:text-2xl text-slate-600 text-center transition-opacity duration-300 min-h-[2em]"
         key={phaseIndex}
         style={{ animation: 'phaseIn 500ms ease-out' }}
       >
@@ -78,9 +78,9 @@ export default function LoadingScreen() {
       </p>
 
       {/* Subtle progress bar */}
-      <div className="mt-8 w-48 h-px bg-stone-200 rounded-full overflow-hidden">
+      <div className="mt-8 w-48 h-px bg-slate-200 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-gold-400 to-gold-500 rounded-full"
+          className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
           style={{ animation: 'progressFill 2s ease-in-out forwards' }}
         />
       </div>

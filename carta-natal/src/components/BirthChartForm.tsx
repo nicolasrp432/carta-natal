@@ -72,7 +72,7 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
       <fieldset className="space-y-2">
         <label
           htmlFor="birth-name"
-          className="block text-[13px] font-medium tracking-wide uppercase text-stone-500"
+          className="block text-[13px] font-medium tracking-wide uppercase text-slate-500"
         >
           Nombre
         </label>
@@ -86,11 +86,11 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
           disabled={isSubmitting}
           className="
             w-full px-4 py-4
-            bg-white border border-stone-200 rounded-xl
-            text-[16px] text-stone-900 placeholder:text-stone-400
+            bg-white/70 border border-slate-200 rounded-xl
+            text-[16px] text-slate-800 placeholder:text-slate-400
             transition-all duration-200
-            hover:border-stone-300
-            focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500
+            hover:border-slate-300
+            focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/60
             disabled:opacity-50 disabled:cursor-not-allowed
           "
         />
@@ -101,7 +101,7 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
         <fieldset className="space-y-2">
           <label
             htmlFor="birth-date"
-            className="block text-[13px] font-medium tracking-wide uppercase text-stone-500"
+            className="block text-[13px] font-medium tracking-wide uppercase text-slate-500"
           >
             Fecha de nacimiento
           </label>
@@ -114,11 +114,11 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
             disabled={isSubmitting}
             className="
               w-full px-4 py-4
-              bg-white border border-stone-200 rounded-xl
-              text-[16px] text-stone-900
+              bg-white/70 border border-slate-200 rounded-xl
+              text-[16px] text-slate-800
               transition-all duration-200
-              hover:border-stone-300
-              focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500
+              hover:border-slate-300
+              focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/60
               disabled:opacity-50 disabled:cursor-not-allowed
             "
           />
@@ -127,7 +127,7 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
         <fieldset className="space-y-2">
           <label
             htmlFor="birth-time"
-            className="block text-[13px] font-medium tracking-wide uppercase text-stone-500"
+            className="block text-[13px] font-medium tracking-wide uppercase text-slate-500"
           >
             Hora exacta
           </label>
@@ -139,15 +139,15 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
             disabled={isSubmitting}
             className="
               w-full px-4 py-4
-              bg-white border border-stone-200 rounded-xl
-              text-[16px] text-stone-900
+              bg-white/70 border border-slate-200 rounded-xl
+              text-[16px] text-slate-800
               transition-all duration-200
-              hover:border-stone-300
-              focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500
+              hover:border-slate-300
+              focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/60
               disabled:opacity-50 disabled:cursor-not-allowed
             "
           />
-          <p className="text-[12px] text-stone-400 mt-1">
+          <p className="text-[12px] text-slate-400 mt-1">
             Si no la sabes exacta, usa una aproximación
           </p>
         </fieldset>
@@ -157,7 +157,7 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
       <fieldset className="space-y-2">
         <label
           htmlFor="birth-city"
-          className="block text-[13px] font-medium tracking-wide uppercase text-stone-500"
+          className="block text-[13px] font-medium tracking-wide uppercase text-slate-500"
         >
           Ciudad de nacimiento
         </label>
@@ -170,7 +170,7 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
 
       {/* Divider */}
       <div className="pt-2">
-        <div className="h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       </div>
 
       {/* Submit */}
@@ -185,8 +185,8 @@ export default function BirthChartForm({ onSubmit, isSubmitting }: BirthChartFor
           transition-all duration-300 cursor-pointer
           flex items-center justify-center gap-3
           ${isValid && !isSubmitting
-            ? 'bg-stone-900 text-white hover:bg-stone-800 active:scale-[0.98] shadow-lg shadow-stone-900/20'
-            : 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none'
+            ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white hover:from-amber-500 hover:to-amber-400 active:scale-[0.98] shadow-lg shadow-amber-600/20'
+            : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
           }
         `}
       >

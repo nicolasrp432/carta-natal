@@ -119,11 +119,10 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
             country: countryName,
             latitude: parseFloat(item.lat),
             longitude: parseFloat(item.lon),
-            timezone: 'Auto', // Fallback as OpenStreetMap does not provide TZ
+            timezone: 'Auto',
           }
         })
         
-        // Very basic deduplication by name + lat/lon combo if needed, though Nominatim usually filters reasonably well
         const uniqueCities = Array.from(new Map(fetchedCities.map(c => [`${c.name}-${c.country}`, c])).values())
         
         setResults(uniqueCities)
@@ -141,7 +140,7 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
       <div className="relative">
         <MapPin
           size={18}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
           aria-hidden="true"
         />
         <input
@@ -165,13 +164,13 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
           placeholder="Escribe tu ciudad..."
           className={`
             w-full pl-11 pr-10 py-4
-            bg-white border rounded-xl
-            text-[16px] text-stone-900 placeholder:text-stone-400
+            bg-white/70 border rounded-xl
+            text-[16px] text-slate-800 placeholder:text-slate-400
             transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500
+            focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/60
             ${value 
-              ? 'border-gold-500/40 bg-gold-50/30' 
-              : 'border-stone-200 hover:border-stone-300'
+              ? 'border-amber-500/40 bg-amber-50/40' 
+              : 'border-slate-200 hover:border-slate-300'
             }
           `}
         />
@@ -180,7 +179,7 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
           <button
             type="button"
             onClick={clearSelection}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors duration-150 cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
             aria-label="Limpiar selección"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -190,7 +189,7 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
         ) : (
           <ChevronDown
             size={16}
-            className={`absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isLoading ? 'opacity-0' : 'opacity-100'}`}
             aria-hidden="true"
           />
         )}
@@ -199,7 +198,7 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
         {!value && isLoading && (
           <Loader2 
             size={16} 
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gold-500 animate-spin pointer-events-none" 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 animate-spin pointer-events-none" 
             aria-hidden="true"
           />
         )}
@@ -214,19 +213,19 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
           className="
             city-dropdown-enter city-list
             absolute z-50 w-full mt-2
-            bg-white border border-stone-200 rounded-xl
-            shadow-lg shadow-stone-900/5
+            bg-white/95 backdrop-blur-xl border border-slate-200 rounded-xl
+            shadow-xl shadow-black/8
             max-h-[240px] overflow-y-auto
             py-1
           "
         >
           {isLoading && results.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-stone-500 flex items-center gap-2">
-               <Loader2 size={14} className="animate-spin text-stone-400" />
+            <li className="px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
+               <Loader2 size={14} className="animate-spin text-slate-400" />
                Buscando ciudad...
             </li>
           ) : results.length === 0 && !isLoading && query.length >= 3 ? (
-            <li className="px-4 py-3 text-sm text-stone-500">
+            <li className="px-4 py-3 text-sm text-slate-400">
                No encontramos esa ciudad.
             </li>
           ) : (
@@ -242,21 +241,21 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
                   flex items-center gap-3 px-4 py-3 cursor-pointer
                   transition-colors duration-100
                   ${highlightedIndex === index
-                    ? 'bg-gold-50 text-stone-900'
-                    : 'text-stone-700 hover:bg-stone-50'
+                    ? 'bg-amber-50 text-slate-900'
+                    : 'text-slate-700 hover:bg-slate-50'
                   }
                 `}
               >
                 <MapPin
                   size={14}
-                  className={`shrink-0 ${highlightedIndex === index ? 'text-gold-500' : 'text-stone-400'}`}
+                  className={`shrink-0 ${highlightedIndex === index ? 'text-amber-500' : 'text-slate-400'}`}
                   aria-hidden="true"
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-[15px] font-medium truncate">{city.name}</span>
-                  <span className="text-[12px] text-stone-400 truncate">{city.country}</span>
+                  <span className="text-[12px] text-slate-400 truncate">{city.country}</span>
                 </div>
-                <span className="ml-auto text-[11px] text-stone-300 font-mono tabular-nums shrink-0">
+                <span className="ml-auto text-[11px] text-slate-400 font-mono tabular-nums shrink-0">
                   {city.latitude.toFixed(2)}°, {city.longitude.toFixed(2)}°
                 </span>
               </li>
@@ -267,11 +266,11 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
 
       {/* Selected city info badge */}
       {value && (
-        <div className="mt-2 flex items-center justify-between text-[12px] text-stone-500">
-          <span className="font-mono tabular-nums text-stone-400 tracking-wider">
+        <div className="mt-2 flex items-center justify-between text-[12px] text-slate-400">
+          <span className="font-mono tabular-nums text-slate-400 tracking-wider">
             {value.latitude.toFixed(4)}°, {value.longitude.toFixed(4)}°
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200 text-stone-600 font-medium">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200/60 text-amber-600 font-medium">
             GPS Exacto
           </span>
         </div>

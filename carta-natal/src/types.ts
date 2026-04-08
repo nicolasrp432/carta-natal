@@ -105,3 +105,15 @@ export interface NatalChartData {
 /* ─── App State ─── */
 
 export type AppView = 'form' | 'loading' | 'results'
+
+/* ─── Generic Astro Entity (for unified event delegation) ─── */
+
+export interface AstroEntity {
+  type: 'planet' | 'house' | 'angle'
+  name: string
+  sign?: ZodiacSign
+  house?: number
+  degree?: number
+  minutes?: number
+  details?: string
+}

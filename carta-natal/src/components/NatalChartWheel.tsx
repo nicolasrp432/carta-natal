@@ -1,5 +1,5 @@
-// component requires no React import with the new JSX transform
-import type { NatalChartData, ZodiacSign } from '../types'
+import { motion } from 'framer-motion'
+import type { NatalChartData, ZodiacSign, AstroEntity } from '../types'
 import { getSignSymbol } from '../utils/zodiac'
 
 const ZODIAC_SIGNS: ZodiacSign[] = [
@@ -17,20 +17,18 @@ function getPlanetSymbol(name: string): string {
 
 interface NatalChartWheelProps {
   data: NatalChartData
-  onPlanetClick?: (planet: any) => void
+  onEntityClick?: (entity: AstroEntity) => void
 }
 
-export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheelProps) {
+export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheelProps) {
   const cx = 400
   const cy = 400
 
-  // Trig helper to convert degrees to SVG coordinates
   const getCoords = (degree: number, r: number) => {
     if (typeof degree !== 'number' || isNaN(degree)) return { x: cx, y: cy }
     const ascDegree = (data.ascendant && typeof data.ascendant.absoluteDegree === 'number' && !isNaN(data.ascendant.absoluteDegree)) 
       ? data.ascendant.absoluteDegree : 0
 
-    // 0 is right, 180 is left. We want to align the Ascendant exactly at the left (180deg).
     const visualDegree = (degree - ascDegree + 180) % 360
     const rad = visualDegree * (Math.PI / 180)
     return {
@@ -39,7 +37,6 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
     }
   }
 
-  // Calculate planetary radii to avoid overlapping with basic grouping logic 
   const planetsToRender = [...data.planets].sort((a, b) => a.absoluteDegree - b.absoluteDegree)
   const planetRadii: number[] = planetsToRender.map(() => 250)
   
@@ -57,20 +54,66 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
     }
   }
 
-  console.log("Astrology Data Debug:", data)
+  const handleKeyDown = (e: React.KeyboardEvent, entity: AstroEntity) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onEntityClick?.(entity)
+    }
+  }
+
+  /* ─── Helper: build AstroEntity from planet ─── */
+  const buildPlanetEntity = (planet: typeof planetsToRender[0]): AstroEntity => ({
+    type: 'planet',
+    name: planet.name,
+    sign: planet.sign,
+    house: planet.house,
+    degree: planet.degree,
+    minutes: planet.minutes,
+  })
+
+  /* ─── Helper: build AstroEntity from house ─── */
+  const buildHouseEntity = (house: typeof data.houses[0]): AstroEntity => ({
+    type: 'house',
+    name: `Casa ${house.houseNumber}`,
+    sign: house.sign,
+    degree: house.degree,
+    details: `Cúspide a ${house.degree.toFixed(1)}° de ${house.sign}`,
+  })
+
+  /* ─── Helper: build AstroEntity from angle ─── */
+  const buildAngleEntity = (label: string, angle: typeof data.ascendant): AstroEntity => ({
+    type: 'angle',
+    name: label,
+    sign: angle.sign,
+    degree: angle.degree,
+    minutes: angle.minutes,
+  })
 
   return (
     <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group">
       {/* Decorative backdrop glow */}
-      <div className="absolute inset-0 bg-gold-500/5 blur-3xl rounded-full scale-110 pointer-events-none" />
+      <div className="absolute inset-0 bg-amber-500/8 blur-3xl rounded-full scale-110 pointer-events-none" />
 
-      <div className="relative aspect-square w-full rounded-full shadow-2xl shadow-stone-900/5 bg-white/60 backdrop-blur-xl border border-stone-200/50 p-3 sm:p-5 flex items-center justify-center transition-all duration-500 hover:border-gold-300/40">
-        <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-sm select-none">
+      <div className="relative aspect-square w-full rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.06)] bg-white/50 backdrop-blur-2xl border border-white/60 p-3 sm:p-5 flex items-center justify-center transition-all duration-500 hover:border-amber-500/20">
+        <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-sm select-none overflow-visible">
           
+          {/* SVG filter for golden aura on hover */}
+          <defs>
+            <filter id="golden-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+              <feFlood floodColor="rgba(251,191,36,0.6)" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
           {/* Base outer ring (Zodiac Background) */}
-          <circle cx={cx} cy={cy} r={350} className="fill-stone-900/80 stroke-yellow-600/50" strokeWidth="2" />
-          <circle cx={cx} cy={cy} r={300} className="fill-stone-50 stroke-yellow-600/30" strokeWidth="1.5" />
-          <circle cx={cx} cy={cy} r={285} className="fill-transparent stroke-yellow-600/20" strokeWidth="0.5" strokeDasharray="6 4" />
+          <circle cx={cx} cy={cy} r={350} fill="#f8fafc" stroke="rgba(245,158,11,0.4)" strokeWidth="2" />
+          <circle cx={cx} cy={cy} r={300} fill="rgba(241,245,249,0.9)" stroke="rgba(245,158,11,0.25)" strokeWidth="1.5" />
+          <circle cx={cx} cy={cy} r={285} fill="transparent" stroke="rgba(245,158,11,0.15)" strokeWidth="0.5" strokeDasharray="6 4" />
           
           {/* Zodiac Segments & Symbols */}
           {ZODIAC_SIGNS.map((sign, i) => {
@@ -85,12 +128,13 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
                <g key={`sign-${sign}`}>
                  <line 
                    x1={pInner.x} y1={pInner.y} x2={pOuter.x} y2={pOuter.y} 
-                   className="stroke-yellow-600/40" strokeWidth="1" 
+                   stroke="rgba(245,158,11,0.3)" strokeWidth="1" 
                  />
                  <text 
                    x={symPos.x} 
                    y={symPos.y} 
-                   className="fill-yellow-500 font-serif text-[28px] opacity-90 transition-opacity hover:opacity-100 cursor-default" 
+                   fill="rgba(217,119,6,0.85)"
+                   className="font-serif text-[28px] transition-opacity hover:opacity-100 cursor-default" 
                    textAnchor="middle" 
                    dominantBaseline="central"
                    aria-label={sign}
@@ -101,50 +145,121 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
              )
           })}
 
-          {/* House Cusps */}
+          {/* House Cusps — Interactive */}
           {data.houses.map(house => {
              const inner = getCoords(house.absoluteDegree, 50)
              const outer = getCoords(house.absoluteDegree, 300)
              const isACMC = house.houseNumber === 1 || house.houseNumber === 10
              
-             // Put house number near center, slightly offset clockwise from cusp
              const numPos = getCoords(house.absoluteDegree + 4, 120)
+             const houseEntity = buildHouseEntity(house)
              
              return (
-               <g key={`house-${house.houseNumber}`}>
+               <motion.g 
+                 key={`house-${house.houseNumber}`}
+                 whileHover={{ 
+                   scale: 1.1,
+                   filter: "drop-shadow(0 0 8px rgba(245,158,11,0.5))"
+                 }}
+                 style={{ 
+                   transformOrigin: `${numPos.x}px ${numPos.y}px`,
+                   cursor: 'pointer',
+                 }}
+                 onClick={() => onEntityClick?.(houseEntity)}
+                 onKeyDown={(e) => handleKeyDown(e, houseEntity)}
+                 role="button"
+                 tabIndex={0}
+                 aria-label={`Casa ${house.houseNumber} en ${house.sign}`}
+               >
                  <line 
                    x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} 
-                   className={isACMC ? "stroke-yellow-600/70" : "stroke-stone-300/80"} 
+                   stroke={isACMC ? "rgba(245,158,11,0.6)" : "rgba(203,213,225,0.4)"} 
                    strokeWidth={isACMC ? 3 : 1} 
                  />
                  <text 
                    x={numPos.x} 
                    y={numPos.y} 
-                   className="fill-stone-400/80 font-mono text-[13px] font-semibold tracking-tighter" 
+                   fill="rgba(100,116,139,0.8)"
+                   className="font-mono text-[13px] font-semibold tracking-tighter" 
                    textAnchor="middle" 
                    dominantBaseline="central"
                  >
                    {house.houseNumber}
                  </text>
-               </g>
+               </motion.g>
              )
           })}
           
-          {/* Detailed Highlight for actual AC / MC Points */}
-          <line
-            x1={getCoords(data.ascendant.absoluteDegree, 50).x} y1={getCoords(data.ascendant.absoluteDegree, 50).y}
-            x2={getCoords(data.ascendant.absoluteDegree, 305).x} y2={getCoords(data.ascendant.absoluteDegree, 305).y}
-            className="stroke-yellow-600/90"
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
-          <line
-            x1={getCoords(data.midheaven.absoluteDegree, 50).x} y1={getCoords(data.midheaven.absoluteDegree, 50).y}
-            x2={getCoords(data.midheaven.absoluteDegree, 305).x} y2={getCoords(data.midheaven.absoluteDegree, 305).y}
-            className="stroke-yellow-600/90"
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
+          {/* AC / MC Interactive Lines */}
+          <motion.g
+            whileHover={{
+              scale: 1.08,
+              filter: "drop-shadow(0 0 10px rgba(245,158,11,0.6))"
+            }}
+            style={{
+              transformOrigin: `${getCoords(data.ascendant.absoluteDegree, 180).x}px ${getCoords(data.ascendant.absoluteDegree, 180).y}px`,
+              cursor: 'pointer',
+            }}
+            onClick={() => onEntityClick?.(buildAngleEntity('Ascendente', data.ascendant))}
+            onKeyDown={(e) => handleKeyDown(e, buildAngleEntity('Ascendente', data.ascendant))}
+            role="button"
+            tabIndex={0}
+            aria-label={`Ascendente en ${data.ascendant.sign}`}
+          >
+            <line
+              x1={getCoords(data.ascendant.absoluteDegree, 50).x} y1={getCoords(data.ascendant.absoluteDegree, 50).y}
+              x2={getCoords(data.ascendant.absoluteDegree, 305).x} y2={getCoords(data.ascendant.absoluteDegree, 305).y}
+              stroke="rgba(245,158,11,0.8)"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+            />
+            {/* ASC label */}
+            <text
+              x={getCoords(data.ascendant.absoluteDegree, 310).x + 6}
+              y={getCoords(data.ascendant.absoluteDegree, 310).y}
+              fill="rgba(217,119,6,0.9)"
+              className="font-sans text-[14px] font-bold tracking-tight"
+              textAnchor="start"
+              dominantBaseline="central"
+            >
+              ASC
+            </text>
+          </motion.g>
+
+          <motion.g
+            whileHover={{
+              scale: 1.08,
+              filter: "drop-shadow(0 0 10px rgba(245,158,11,0.6))"
+            }}
+            style={{
+              transformOrigin: `${getCoords(data.midheaven.absoluteDegree, 180).x}px ${getCoords(data.midheaven.absoluteDegree, 180).y}px`,
+              cursor: 'pointer',
+            }}
+            onClick={() => onEntityClick?.(buildAngleEntity('Medio Cielo', data.midheaven))}
+            onKeyDown={(e) => handleKeyDown(e, buildAngleEntity('Medio Cielo', data.midheaven))}
+            role="button"
+            tabIndex={0}
+            aria-label={`Medio Cielo en ${data.midheaven.sign}`}
+          >
+            <line
+              x1={getCoords(data.midheaven.absoluteDegree, 50).x} y1={getCoords(data.midheaven.absoluteDegree, 50).y}
+              x2={getCoords(data.midheaven.absoluteDegree, 305).x} y2={getCoords(data.midheaven.absoluteDegree, 305).y}
+              stroke="rgba(245,158,11,0.8)"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+            />
+            {/* MC label */}
+            <text
+              x={getCoords(data.midheaven.absoluteDegree, 310).x + 6}
+              y={getCoords(data.midheaven.absoluteDegree, 310).y}
+              fill="rgba(217,119,6,0.9)"
+              className="font-sans text-[14px] font-bold tracking-tight"
+              textAnchor="start"
+              dominantBaseline="central"
+            >
+              MC
+            </text>
+          </motion.g>
 
           {/* Aspect Lines */}
           {data.aspects && data.aspects.map((aspect, idx) => {
@@ -154,15 +269,15 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
             const p2 = planetsToRender.find((p) => p.name === aspect.planet2)
             if (!p1 || !p2 || typeof p1.absoluteDegree !== 'number' || typeof p2.absoluteDegree !== 'number' || isNaN(p1.absoluteDegree) || isNaN(p2.absoluteDegree)) return null
 
-            const radius = 200 // inner routing for lines
+            const radius = 200
             const pos1 = getCoords(p1.absoluteDegree, radius)
             const pos2 = getCoords(p2.absoluteDegree, radius)
 
-            let strokeClass = 'stroke-stone-300/30'
+            let strokeColor = 'rgba(203,213,225,0.35)'
             if (aspect.type === 'Square' || aspect.type === 'Opposition') {
-              strokeClass = 'stroke-red-500/60'
+              strokeColor = 'rgba(239,68,68,0.45)'
             } else if (aspect.type === 'Trine' || aspect.type === 'Sextile') {
-              strokeClass = 'stroke-sky-400/60'
+              strokeColor = 'rgba(56,189,248,0.45)'
             }
 
             return (
@@ -172,22 +287,42 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
                 y1={pos1.y}
                 x2={pos2.x}
                 y2={pos2.y}
-                className={strokeClass}
+                stroke={strokeColor}
                 strokeWidth={aspect.orb < 2 ? '1.5' : '1'}
               />
             )
           })}
 
+          {/* ─── Animated Planet Nodes ─── */}
           {planetsToRender.map((planet, i) => {
             const rx = planetRadii[i]
             const pos = getCoords(planet.absoluteDegree, rx)
+            const entity = buildPlanetEntity(planet)
             
             return (
-              <g 
-                key={`planet-${planet.name}`} 
-                className="group/planet transition-transform hover:scale-125 cursor-pointer origin-center" 
-                style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
-                onClick={() => onPlanetClick?.(planet)}
+              <motion.g 
+                key={`planet-${planet.name}`}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 260, 
+                  damping: 20, 
+                  delay: i * 0.05 
+                }}
+                whileHover={{ 
+                  scale: 1.15,
+                  filter: "drop-shadow(0 0 12px rgba(251,191,36,0.7))"
+                }}
+                style={{ 
+                  transformOrigin: `${pos.x}px ${pos.y}px`,
+                  cursor: 'pointer',
+                }}
+                onClick={() => onEntityClick?.(entity)}
+                onKeyDown={(e) => handleKeyDown(e, entity)}
+                role="button"
+                tabIndex={0}
+                aria-label={`${planet.name} en ${planet.sign}, Casa ${planet.house}`}
               >
                 {/* Visual marker line from inner ring */}
                 <line 
@@ -195,22 +330,22 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
                   y1={getCoords(planet.absoluteDegree, rx + 18).y} 
                   x2={getCoords(planet.absoluteDegree, 300).x} 
                   y2={getCoords(planet.absoluteDegree, 300).y} 
-                  className="stroke-stone-300/50" 
+                  stroke="rgba(203,213,225,0.35)" 
                   strokeDasharray="4 4" 
                 />
                 
                 {/* Planet Glyph Circle Backdrop */}
-                <circle cx={pos.x} cy={pos.y} r="18" className="fill-stone-900 shadow-md transition-colors group-hover/planet:fill-stone-800" />
-                <circle cx={pos.x} cy={pos.y} r="18" className="stroke-yellow-500/70 fill-transparent" strokeWidth="1.5" />
+                <circle cx={pos.x} cy={pos.y} r="18" fill="#ffffff" />
+                <circle cx={pos.x} cy={pos.y} r="18" stroke="rgba(245,158,11,0.6)" fill="transparent" strokeWidth="1.5" />
                 
                 {/* Planet Glyph Text */}
                 <text 
                   x={pos.x} 
                   y={pos.y} 
-                  className="fill-stone-200 font-sans font-medium text-[20px]" 
+                  fill="rgba(30,41,59,0.95)"
+                  className="font-sans font-medium text-[20px]" 
                   textAnchor="middle" 
                   dominantBaseline="central"
-                  aria-label={planet.name}
                 >
                   <title>{planet.name} en {planet.sign}</title>
                   {getPlanetSymbol(planet.name)}
@@ -220,19 +355,20 @@ export default function NatalChartWheel({ data, onPlanetClick }: NatalChartWheel
                 <text
                   x={pos.x + 13}
                   y={pos.y + 13}
-                  className="fill-stone-400 font-serif text-[11px] font-medium tracking-tighter"
+                  fill="rgba(100,116,139,0.8)"
+                  className="font-serif text-[11px] font-medium tracking-tighter"
                   textAnchor="start"
                 >
                   {planet.degree}°
                 </text>
-              </g>
+              </motion.g>
             )
           })}
 
           {/* Center piece */}
-          <circle cx={cx} cy={cy} r="50" className="fill-stone-50 stroke-yellow-600/30" strokeWidth="1" />
-          <circle cx={cx} cy={cy} r="40" className="fill-stone-100 stroke-yellow-600/20" strokeWidth="0.5" strokeDasharray="3 3"/>
-          <circle cx={cx} cy={cy} r="8" className="fill-yellow-600/90" />
+          <circle cx={cx} cy={cy} r="50" fill="rgba(241,245,249,0.95)" stroke="rgba(245,158,11,0.25)" strokeWidth="1" />
+          <circle cx={cx} cy={cy} r="40" fill="rgba(226,232,240,0.7)" stroke="rgba(245,158,11,0.15)" strokeWidth="0.5" strokeDasharray="3 3"/>
+          <circle cx={cx} cy={cy} r="8" fill="rgba(245,158,11,0.85)" />
         </svg>
       </div>
     </div>
