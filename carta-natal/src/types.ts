@@ -87,6 +87,9 @@ export interface NatalChartData {
     birthTime: string
     city: string
     country: string
+    latitude?: number
+    longitude?: number
+    timezone?: string
   }
   /** Planetary positions */
   planets: PlanetPosition[]

@@ -260,6 +260,9 @@ export async function generateMockNatalData(
           birthTime: payload.birthTime,
           city: payload.city,
           country: payload.country,
+          latitude: payload.latitude,
+          longitude: payload.longitude,
+          timezone: payload.timezone,
         },
         planets,
         houses,
@@ -467,7 +470,10 @@ export const adaptAstroAPIResponse = (apiData: any, userData: any): NatalChartDa
       birthDate: userData.birthDate || userData.date || new Date().toISOString(),
       birthTime: userData.birthTime || userData.time || '12:00',
       city: userData.city,
-      country: userData.country
+      country: userData.country,
+      latitude: userData.latitude,
+      longitude: userData.longitude,
+      timezone: userData.timezone,
     },
     // Filtramos ASC y MC de la lista de planetas para evitar duplicar en la UI
     planets: filteredPlanets.filter((p: any) => p.name !== 'Ascendente' && p.name !== 'Medio Cielo'), 

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import type { NatalChartData, ZodiacSign, AstroEntity } from '../types'
 import { getSignSymbol } from '../utils/zodiac'
 
@@ -21,6 +22,61 @@ interface NatalChartWheelProps {
 }
 
 export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheelProps) {
+  const [svgContent, setSvgContent] = useState<string | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchChartSvg = async () => {
+      const lat = data.subject.latitude ?? 0
+      const lon = data.subject.longitude ?? 0
+      const tz = data.subject.timezone ?? 'UTC'
+      const dateTime = `${data.subject.birthDate}T${data.subject.birthTime}`
+      
+      const apiKey = import.meta.env.VITE_ASTRO_API_KEY || ''
+      const url = `/api/astrology/chart/image.svg?width=800&height=800&dateTime=${dateTime}&location.longitude=${lon}&location.latitude=${lat}&location.timezone=${tz}`
+      
+      try {
+        setLoading(true)
+        const response = await fetch(url, {
+          headers: {
+            'X-Api-Key': apiKey
+          }
+        })
+        if (!response.ok) {
+          throw new Error(`Failed to fetch chart SVG: ${response.status}`)
+        }
+        let text = await response.text()
+        
+        // Make the SVG responsive
+        text = text.replace(/<svg[^>]*>/, (match) => {
+          let modified = match;
+          if (!modified.includes('viewBox')) {
+            modified = modified.replace('>', ' viewBox="0 0 800 800">');
+          }
+          modified = modified.replace(/width="[^"]*"/, 'width="100%"');
+          modified = modified.replace(/height="[^"]*"/, 'height="100%"');
+          return modified;
+        });
+
+        setSvgContent(text)
+        setError(null)
+      } catch (err: any) {
+        console.error(err)
+        setError(err.message || 'Error rendering chart')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    const useMock = import.meta.env.VITE_USE_MOCK_API
+    if (useMock === 'true') {
+      setLoading(false)
+    } else {
+      fetchChartSvg()
+    }
+  }, [data])
+
   const cx = 400
   const cy = 400
 
@@ -88,6 +144,30 @@ export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheel
     degree: angle.degree,
     minutes: angle.minutes,
   })
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-[700px] aspect-square mx-auto my-12 flex items-center justify-center bg-white/50 backdrop-blur-2xl border border-white/60 rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.06)] relative p-5">
+        <div className="absolute inset-0 bg-amber-500/8 blur-3xl rounded-full scale-110 pointer-events-none" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium text-slate-500 font-serif">Calculando posición de los astros...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (svgContent && !error) {
+    return (
+      <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group">
+        <div className="absolute inset-0 bg-amber-500/8 blur-3xl rounded-full scale-110 pointer-events-none" />
+        <div 
+          className="relative aspect-square w-full rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.06)] bg-white/50 backdrop-blur-2xl border border-white/60 p-3 sm:p-5 flex items-center justify-center transition-all duration-500 hover:border-amber-500/20"
+          dangerouslySetInnerHTML={{ __html: svgContent }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group">

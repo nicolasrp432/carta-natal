@@ -40,11 +40,46 @@ export default function CityAutocomplete({ value, onChange, id }: CityAutocomple
     }
   }, [highlightedIndex])
 
-  const selectCity = useCallback((city: CityData) => {
-    onChange(city)
+  const selectCity = useCallback(async (city: CityData) => {
     setQuery(`${city.name}, ${city.country}`)
     setIsOpen(false)
     setHighlightedIndex(-1)
+
+    if (city.timezone === 'Auto') {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`https://timeapi.io/api/TimeZone/coordinate?latitude=${city.latitude}&longitude=${city.longitude}`)
+        if (response.ok) {
+          const tzData = await response.json()
+          const resolvedTz = tzData.timeZone || tzData.timezone
+          if (resolvedTz) {
+            onChange({
+              ...city,
+              timezone: resolvedTz
+            })
+            setIsLoading(false)
+            return
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch timezone from timeapi.io:", err)
+      } finally {
+        setIsLoading(false)
+      }
+      
+      // Fallback: use browser local timezone or UTC
+      let browserTz = 'UTC'
+      try {
+        browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+      } catch (e) {}
+      
+      onChange({
+        ...city,
+        timezone: browserTz
+      })
+    } else {
+      onChange(city)
+    }
   }, [onChange])
 
   const clearSelection = useCallback(() => {
