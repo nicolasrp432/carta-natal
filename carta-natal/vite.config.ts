@@ -13,9 +13,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/astrology': {
-        target: 'https://json.freeastrologyapi.com',
+        target: 'https://api.astroapi.cloud',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/astrology/, '')
+        rewrite: (path) => path.replace(/^\/api\/astrology/, '/api')
       }
     }
   }
