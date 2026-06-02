@@ -323,143 +323,115 @@ export async function fetchAstroAPI(payload: BirthChartPayload): Promise<any> {
  * ADAPTER: Mapea la respuesta de AstroAPI al contrato UI (NatalChartData)
  */
 export const adaptAstroAPIResponse = (apiData: any, userData: any): NatalChartData => {
-  const attrs = apiData?.data?.attributes || {};
-  let planetsRaw = attrs.planets || attrs.points || {};
-  let housesRaw = attrs.houses || attrs.cusps || [];
+  // AstroAPI returns a flat structure directly inside `apiData.data`
+  const data = apiData?.data || {};
+  const pointsRaw = data.points || {};
+  const housesCuspsRaw = data.houses?.cusps || [];
+  const anglesRaw = data.angles || {};
 
-  // 1. Diccionario Traductor Universal
+  // 1. Diccionario Traductor Universal de Planetas
   const astroDict: Record<string, string> = {
     'sun': 'Sol', 'moon': 'Luna', 'mercury': 'Mercurio', 'venus': 'Venus', 'mars': 'Marte',
     'jupiter': 'Júpiter', 'saturn': 'Saturno', 'uranus': 'Urano', 'neptune': 'Neptuno', 'pluto': 'Plutón',
     'ascendant': 'Ascendente', 'midheaven': 'Medio Cielo'
   };
 
-  // 2. Calculadora Matemática de Signos (Infalible)
+  // 2. Diccionario de Traducción de Signos (de inglés minúsculas a español)
+  const signDict: Record<string, ZodiacSign> = {
+    'aries': 'Aries', 'taurus': 'Tauro', 'gemini': 'Géminis', 'cancer': 'Cáncer',
+    'leo': 'Leo', 'virgo': 'Virgo', 'libra': 'Libra', 'scorpio': 'Escorpio',
+    'sagittarius': 'Sagitario', 'capricorn': 'Capricornio', 'aquarius': 'Acuario', 'pisces': 'Piscis'
+  };
+
   const getSignFromDeg = (deg: number): ZodiacSign => {
     const signs: ZodiacSign[] = ['Aries', 'Tauro', 'Géminis', 'Cáncer', 'Leo', 'Virgo', 'Libra', 'Escorpio', 'Sagitario', 'Capricornio', 'Acuario', 'Piscis'];
     return signs[Math.floor((deg || 0) / 30) % 12];
   };
 
-  // 3. Mapeo Preciso de Planetas
-  let mappedPlanets: PlanetPosition[] = [];
-  
-  if (planetsRaw && typeof planetsRaw === 'object' && !Array.isArray(planetsRaw)) {
-    mappedPlanets = Object.entries(planetsRaw).map(([key, p]: [string, any]) => {
-      const rawName = key;
-      const translatedName = astroDict[rawName.toLowerCase()];
-      const absoluteDeg = p.longitude ?? p.position ?? p.fullDegree ?? p.absoluteDegree ?? 0;
+  // 3. Mapeo de Planetas
+  const planetsKeys = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+  const mappedPlanets: PlanetPosition[] = planetsKeys.map(key => {
+    const p = pointsRaw[key] || {};
+    const absoluteDeg = p.longitude ?? 0;
+    
+    // Find the sign (translate from api sign or calculate from deg)
+    const rawSign = p.sign?.toLowerCase();
+    const sign = signDict[rawSign] || getSignFromDeg(absoluteDeg);
+    
+    const degree = p.longitudeDms?.degrees ?? Math.floor(absoluteDeg % 30);
+    const minutes = p.longitudeDms?.minutes ?? Math.floor((absoluteDeg % 1) * 60);
+    const house = p.houseNumber ?? 1;
+    const retrograde = p.retrograde ?? false;
 
-      return {
-        name: (translatedName || rawName) as PlanetName, 
-        sign: getSignFromDeg(absoluteDeg),
-        degree: p.degree ?? Math.floor(absoluteDeg % 30),
-        minutes: p.minutes ?? Math.floor((absoluteDeg % 1) * 60),
-        absoluteDegree: Number(Math.round(absoluteDeg * 100) / 100) || 0,
-        house: p.house ?? 1,
-        retrograde: p.retrograde ?? p.isRetrograde ?? p.isRetro ?? false
-      };
-    });
-  } else if (Array.isArray(planetsRaw)) {
-    mappedPlanets = planetsRaw.map((p: any) => {
-      const rawName = p.name || p.id || p.planet || 'Unknown';
-      const translatedName = astroDict[rawName.toLowerCase()];
-      const absoluteDeg = p.longitude ?? p.position ?? p.fullDegree ?? p.absoluteDegree ?? 0;
-
-      return {
-        name: (translatedName || rawName) as PlanetName, 
-        sign: getSignFromDeg(absoluteDeg),
-        degree: p.degree ?? Math.floor(absoluteDeg % 30),
-        minutes: p.minutes ?? Math.floor((absoluteDeg % 1) * 60),
-        absoluteDegree: Number(Math.round(absoluteDeg * 100) / 100) || 0,
-        house: p.house ?? 1,
-        retrograde: p.retrograde ?? p.isRetrograde ?? p.isRetro ?? false
-      };
-    });
-  }
-
-  // Filtrar solo los planetas reconocidos para evitar contaminar la UI
-  const filteredPlanets = mappedPlanets.filter((p: any) => Object.values(astroDict).includes(p.name));
+    return {
+      name: astroDict[key] as PlanetName,
+      sign,
+      degree,
+      minutes,
+      absoluteDegree: Number(Math.round(absoluteDeg * 100) / 100) || 0,
+      house,
+      retrograde
+    };
+  });
 
   // 4. Mapeo de Casas
-  if (housesRaw && typeof housesRaw === 'object' && !Array.isArray(housesRaw) && housesRaw.cusps) {
-    housesRaw = housesRaw.cusps;
-  }
+  const mappedHouses: HouseCusp[] = housesCuspsRaw.map((h: any, index: number) => {
+    const houseNumber = index + 1;
+    const absDeg = h.longitude ?? (index * 30);
+    const rawSign = h.sign?.toLowerCase();
+    const sign = signDict[rawSign] || getSignFromDeg(absDeg);
+    const degree = h.longitudeDms?.degrees ?? Math.floor((absDeg % 30));
 
-  let mappedHouses: HouseCusp[] = [];
-  if (Array.isArray(housesRaw)) {
-    mappedHouses = housesRaw.map((h: any, index: number) => {
-      const houseNumber = h.house ?? h.houseNumber ?? h.id ?? (index + 1);
-      const absDeg = h.cusp ?? h.longitude ?? h.position ?? h.absoluteDegree ?? (index * 30);
+    return {
+      houseNumber,
+      sign,
+      degree: Number(Math.round(degree * 100) / 100) || 0,
+      absoluteDegree: Number(Math.round(absDeg * 100) / 100) || 0
+    };
+  });
 
-      return {
-        houseNumber,
-        sign: getSignFromDeg(absDeg),
-        degree: h.degree ?? Math.floor(absDeg % 30),
-        absoluteDegree: Number(Math.round(absDeg * 100) / 100) || 0
-      };
-    });
-  } else if (housesRaw && typeof housesRaw === 'object') {
-    mappedHouses = Object.entries(housesRaw).map(([key, h]: [string, any], index: number) => {
-      const houseNumber = (Number(key.replace(/\D/g, '')) || h.house) ?? h.houseNumber ?? (index + 1);
-      const absDeg = h.cusp ?? h.longitude ?? h.position ?? h.absoluteDegree ?? (index * 30);
-
-      return {
-        houseNumber,
-        sign: getSignFromDeg(absDeg),
-        degree: h.degree ?? Math.floor(absDeg % 30),
-        absoluteDegree: Number(Math.round(absDeg * 100) / 100) || 0
-      };
-    });
-  }
-
-  // Asegurar que las casas estén ordenadas ascendentemente
-  mappedHouses.sort((a, b) => a.houseNumber - b.houseNumber);
-
-  // 5. Extracción de Ángulos (Ascendente y Medio Cielo)
-  const ascNode = mappedPlanets.find((p: any) => p.name === 'Ascendente');
-  const mcNode = mappedPlanets.find((p: any) => p.name === 'Medio Cielo');
-
+  // 5. Extracción de Ángulos
+  const ascData = anglesRaw.ascendant || {};
+  const mcData = anglesRaw.midheaven || {};
   const cusp1 = mappedHouses.find(h => h.houseNumber === 1)?.absoluteDegree ?? 0;
   const cusp10 = mappedHouses.find(h => h.houseNumber === 10)?.absoluteDegree ?? 0;
 
   const ascendant = {
     name: 'Ascendente',
-    sign: ascNode ? ascNode.sign : getSignFromDeg(cusp1),
-    degree: ascNode ? ascNode.degree : Math.floor(cusp1 % 30),
-    minutes: ascNode ? ascNode.minutes : Math.floor((cusp1 % 1) * 60),
-    absoluteDegree: ascNode ? ascNode.absoluteDegree : cusp1
+    sign: signDict[ascData.sign?.toLowerCase()] || getSignFromDeg(ascData.longitude ?? cusp1),
+    degree: ascData.longitudeDms?.degrees ?? Math.floor((ascData.longitude ?? cusp1) % 30),
+    minutes: ascData.longitudeDms?.minutes ?? Math.floor(((ascData.longitude ?? cusp1) % 1) * 60),
+    absoluteDegree: ascData.longitude ?? cusp1
   };
 
   const midheaven = {
     name: 'Medio Cielo',
-    sign: mcNode ? mcNode.sign : getSignFromDeg(cusp10),
-    degree: mcNode ? mcNode.degree : Math.floor(cusp10 % 30),
-    minutes: mcNode ? mcNode.minutes : Math.floor((cusp10 % 1) * 60),
-    absoluteDegree: mcNode ? mcNode.absoluteDegree : cusp10
+    sign: signDict[mcData.sign?.toLowerCase()] || getSignFromDeg(mcData.longitude ?? cusp10),
+    degree: mcData.longitudeDms?.degrees ?? Math.floor((mcData.longitude ?? cusp10) % 30),
+    minutes: mcData.longitudeDms?.minutes ?? Math.floor(((mcData.longitude ?? cusp10) % 1) * 60),
+    absoluteDegree: mcData.longitude ?? cusp10
   };
 
-  // 6. Calculadora Geométrica de Aspectos (Ptolemaicas)
+  // 6. Calculadora Geométrica de Aspectos
   const calculatedAspects: Aspect[] = [];
-  const planetsForAspects = filteredPlanets.filter((p: any) => p.name !== 'Ascendente' && p.name !== 'Medio Cielo');
-
-  for (let i = 0; i < planetsForAspects.length; i++) {
-    for (let j = i + 1; j < planetsForAspects.length; j++) {
-      const p1 = planetsForAspects[i];
-      const p2 = planetsForAspects[j];
+  for (let i = 0; i < mappedPlanets.length; i++) {
+    for (let j = i + 1; j < mappedPlanets.length; j++) {
+      const p1 = mappedPlanets[i];
+      const p2 = mappedPlanets[j];
 
       const diff = Math.abs(p1.absoluteDegree - p2.absoluteDegree);
       const shortestDistance = Math.min(diff, 360 - diff);
 
       if (shortestDistance <= 8) {
-        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Conjunction', angle: 0, orb: shortestDistance });
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Conjunction', angle: 0, orb: Number(shortestDistance.toFixed(2)) });
       } else if (Math.abs(shortestDistance - 60) <= 6) {
-        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Sextile', angle: 60, orb: Math.abs(shortestDistance - 60) });
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Sextile', angle: 60, orb: Number(Math.abs(shortestDistance - 60).toFixed(2)) });
       } else if (Math.abs(shortestDistance - 90) <= 8) {
-        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Square', angle: 90, orb: Math.abs(shortestDistance - 90) });
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Square', angle: 90, orb: Number(Math.abs(shortestDistance - 90).toFixed(2)) });
       } else if (Math.abs(shortestDistance - 120) <= 8) {
-        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Trine', angle: 120, orb: Math.abs(shortestDistance - 120) });
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Trine', angle: 120, orb: Number(Math.abs(shortestDistance - 120).toFixed(2)) });
       } else if (Math.abs(shortestDistance - 180) <= 8) {
-        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Opposition', angle: 180, orb: Math.abs(shortestDistance - 180) });
+        calculatedAspects.push({ planet1: p1.name, planet2: p2.name, type: 'Opposition', angle: 180, orb: Number(Math.abs(shortestDistance - 180).toFixed(2)) });
       }
     }
   }
@@ -475,15 +447,15 @@ export const adaptAstroAPIResponse = (apiData: any, userData: any): NatalChartDa
       longitude: userData.longitude,
       timezone: userData.timezone,
     },
-    // Filtramos ASC y MC de la lista de planetas para evitar duplicar en la UI
-    planets: filteredPlanets.filter((p: any) => p.name !== 'Ascendente' && p.name !== 'Medio Cielo'), 
+    planets: mappedPlanets,
     houses: mappedHouses,
     aspects: calculatedAspects,
     ascendant: ascendant as any,
     midheaven: midheaven as any,
-    calculatedAt: new Date().toISOString()
+    calculatedAt: new Date().toISOString(),
+    chartUrl: data.chart?.url
   };
-};
+};;
 
 export const calculateNatalChart = async (userData: any): Promise<NatalChartData> => {
   const useMock = import.meta.env.VITE_USE_MOCK_API;

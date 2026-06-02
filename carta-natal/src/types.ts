@@ -103,6 +103,8 @@ export interface NatalChartData {
   midheaven: AnglePoint
   /** Timestamp of calculation */
   calculatedAt: string
+  /** URL of pre-rendered chart image */
+  chartUrl?: string
 }
 
 /* ─── App State ─── */

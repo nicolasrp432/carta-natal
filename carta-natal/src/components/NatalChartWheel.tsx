@@ -27,6 +27,11 @@ export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheel
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (data.chartUrl) {
+      setLoading(false)
+      return
+    }
+
     const fetchChartSvg = async () => {
       const lat = data.subject.latitude ?? 0
       const lon = data.subject.longitude ?? 0
@@ -157,12 +162,26 @@ export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheel
     )
   }
 
+  if (data.chartUrl) {
+    return (
+      <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group flex items-center justify-center">
+        {/* Subtle decorative glow */}
+        <div className="absolute inset-0 bg-amber-500/5 blur-3xl rounded-full scale-110 pointer-events-none" />
+        <img 
+          src={data.chartUrl} 
+          className="w-full h-auto aspect-square object-contain relative" 
+          alt="Carta Natal" 
+        />
+      </div>
+    )
+  }
+
   if (svgContent && !error) {
     return (
-      <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group">
+      <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group flex items-center justify-center">
         <div className="absolute inset-0 bg-amber-500/8 blur-3xl rounded-full scale-110 pointer-events-none" />
         <div 
-          className="relative aspect-square w-full rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.06)] bg-white/50 backdrop-blur-2xl border border-white/60 p-3 sm:p-5 flex items-center justify-center transition-all duration-500 hover:border-amber-500/20"
+          className="relative w-full aspect-square flex items-center justify-center"
           dangerouslySetInnerHTML={{ __html: svgContent }}
         />
       </div>
@@ -170,12 +189,11 @@ export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheel
   }
 
   return (
-    <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group">
+    <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group flex items-center justify-center">
       {/* Decorative backdrop glow */}
       <div className="absolute inset-0 bg-amber-500/8 blur-3xl rounded-full scale-110 pointer-events-none" />
 
-      <div className="relative aspect-square w-full rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.06)] bg-white/50 backdrop-blur-2xl border border-white/60 p-3 sm:p-5 flex items-center justify-center transition-all duration-500 hover:border-amber-500/20">
-        <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-sm select-none overflow-visible">
+      <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-sm select-none overflow-visible">
           
           {/* SVG filter for golden aura on hover */}
           <defs>
@@ -450,7 +468,6 @@ export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheel
           <circle cx={cx} cy={cy} r="40" fill="rgba(226,232,240,0.7)" stroke="rgba(245,158,11,0.15)" strokeWidth="0.5" strokeDasharray="3 3"/>
           <circle cx={cx} cy={cy} r="8" fill="rgba(245,158,11,0.85)" />
         </svg>
-      </div>
     </div>
   )
 }

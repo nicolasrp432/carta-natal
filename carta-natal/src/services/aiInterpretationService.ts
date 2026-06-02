@@ -33,7 +33,7 @@ const systemPrompt = "Eres un astrólogo humano, místico y muy empático. RESPO
  * Call Gemini API directly.
  */
 async function callGeminiAPI(prompt: string): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`;
   
   const response = await fetch(url, {
     method: "POST",
