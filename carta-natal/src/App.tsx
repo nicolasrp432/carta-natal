@@ -41,7 +41,7 @@ export default function App() {
       />
 
       {/* Content */}
-      <main className={`relative w-full ${view === 'results' ? 'max-w-2xl' : 'max-w-lg'} transition-all duration-500`}>
+      <main className={`relative w-full ${view === 'results' ? 'max-w-3xl' : 'max-w-lg'} transition-all duration-500`}>
 
         {/* ─── Header (always visible) ─── */}
         <header className="text-center mb-12 sm:mb-14">

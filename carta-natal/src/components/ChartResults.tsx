@@ -20,7 +20,7 @@ export default function ChartResults({ data, onReset }: ChartResultsProps) {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-8 animate-[fadeInUp_600ms_ease-out]">
+    <div className="w-full max-w-3xl mx-auto space-y-8 animate-[fadeInUp_600ms_ease-out]">
 
       {/* ─── Header ─── */}
       <header className="text-center space-y-3">

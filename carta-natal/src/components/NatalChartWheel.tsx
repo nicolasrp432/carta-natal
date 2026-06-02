@@ -164,12 +164,12 @@ export default function NatalChartWheel({ data, onEntityClick }: NatalChartWheel
 
   if (data.chartUrl) {
     return (
-      <div className="w-full max-w-[700px] mx-auto my-12 px-2 xs:px-4 sm:px-6 relative group flex items-center justify-center">
+      <div className="w-full max-w-[700px] mx-auto my-8 px-0 relative group flex items-center justify-center">
         {/* Subtle decorative glow */}
         <div className="absolute inset-0 bg-amber-500/5 blur-3xl rounded-full scale-110 pointer-events-none" />
         <img 
           src={data.chartUrl} 
-          className="w-full h-auto aspect-square object-contain relative" 
+          className="w-full h-auto aspect-square object-contain relative rounded-full overflow-hidden border border-slate-100 shadow-md transition-shadow duration-300 hover:shadow-lg" 
           alt="Carta Natal" 
         />
       </div>
