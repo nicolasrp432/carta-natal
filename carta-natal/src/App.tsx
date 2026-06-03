@@ -5,9 +5,24 @@ import ChartResults from './components/ChartResults'
 import { calculateNatalChart } from './services/astrologyService'
 import type { AppView, BirthChartPayload, NatalChartData } from './types'
 
+// ─── Modo integrado (embebido en la plataforma) ───
+const urlParams = new URLSearchParams(window.location.search)
+const isEmbedded = urlParams.get('embedded') === 'true'
+const parentOrigin = urlParams.get('origin') || ''
+
 export default function App() {
   const [view, setView] = useState<AppView>('form')
   const [chartData, setChartData] = useState<NatalChartData | null>(null)
+
+  // Envía la carta calculada a la plataforma (ventana padre) vía postMessage
+  const sendChartToParent = useCallback((data: NatalChartData) => {
+    if (isEmbedded && parentOrigin) {
+      window.parent.postMessage(
+        { type: 'natal-chart-calculated', data },
+        parentOrigin
+      )
+    }
+  }, [])
 
   const handleSubmit = useCallback(async (payload: BirthChartPayload) => {
     setView('loading')
@@ -28,7 +43,7 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-white to-slate-100 flex flex-col items-center px-5 py-12 sm:py-16">
+    <div className={`min-h-dvh bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-white to-slate-100 flex flex-col items-center px-5 ${isEmbedded ? 'py-6 sm:py-8' : 'py-12 sm:py-16'}`}>
       {/* Subtle texture overlay */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.02]"
@@ -98,7 +113,12 @@ export default function App() {
 
         {/* ─── View: Results ─── */}
         {view === 'results' && chartData && (
-          <ChartResults data={chartData} onReset={handleReset} />
+          <ChartResults
+            data={chartData}
+            onReset={handleReset}
+            embedded={isEmbedded}
+            onSaveToProfile={() => sendChartToParent(chartData)}
+          />
         )}
 
         {/* Footer */}

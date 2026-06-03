@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Save, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { NatalChartData, ZodiacSign, AstroEntity } from '../types'
 import { getSignSymbol, getElementColors, getSignElement } from '../utils/zodiac'
@@ -9,11 +9,19 @@ import InterpretationPanel from './InterpretationPanel'
 interface ChartResultsProps {
   data: NatalChartData
   onReset: () => void
+  embedded?: boolean
+  onSaveToProfile?: () => void
 }
 
-export default function ChartResults({ data, onReset }: ChartResultsProps) {
+export default function ChartResults({ data, onReset, embedded = false, onSaveToProfile }: ChartResultsProps) {
   const { subject, planets, houses, ascendant, midheaven } = data
   const [selectedEntity, setSelectedEntity] = useState<AstroEntity | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  const handleSave = () => {
+    onSaveToProfile?.()
+    setSaved(true)
+  }
 
   const handleEntityClick = (entity: AstroEntity) => {
     setSelectedEntity(entity)
@@ -227,6 +235,29 @@ export default function ChartResults({ data, onReset }: ChartResultsProps) {
       {/* ─── Actions ─── */}
       <div className="pt-4 flex flex-col items-center gap-4">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent" aria-hidden="true" />
+
+        {embedded && (
+          <button
+            id="save-chart"
+            type="button"
+            onClick={handleSave}
+            disabled={saved}
+            className={`
+              inline-flex items-center gap-2
+              text-[15px] font-semibold tracking-wide
+              px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
+              transition-all duration-200 cursor-pointer
+              ${saved
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 cursor-default'
+                : 'bg-gradient-to-r from-amber-600 to-amber-500 text-white hover:from-amber-500 hover:to-amber-400 active:scale-[0.98] shadow-lg shadow-amber-600/20'
+              }
+            `}
+          >
+            {saved ? <Check size={18} aria-hidden="true" /> : <Save size={18} aria-hidden="true" />}
+            {saved ? 'Guardada en tu perfil' : 'Guardar en mi perfil'}
+          </button>
+        )}
+
         <button
           id="reset-chart"
           type="button"
